@@ -1,18 +1,18 @@
 # Cree la tache planifiee WhisperDictation - a executer une seule fois en administrateur
 
-$pythonPath = "C:\Users\PCAdmin\AppData\Local\Programs\Python\Python313\python.exe"
+$pythonPath = "C:\Users\PCAdmin\AppData\Local\Programs\Python\Python313\pythonw.exe"
 $scriptPath = "C:\Users\PCAdmin\Documents\Github\whisper-dictation\dictee.py"
 $workDir    = "C:\Users\PCAdmin\Documents\Github\whisper-dictation"
 $taskName   = "WhisperDictation"
 $userName   = "PCAdmin"
 
 $action = New-ScheduledTaskAction `
-    -Execute "cmd.exe" `
-    -Argument "/MIN /C `"$pythonPath`" `"$scriptPath`"" `
+    -Execute $pythonPath `
+    -Argument "`"$scriptPath`"" `
     -WorkingDirectory $workDir
 
 $trigger = New-ScheduledTaskTrigger -AtLogOn -User $userName
-$trigger.Delay = "PT10S"
+$trigger.Delay = "PT60S"
 
 $settings = New-ScheduledTaskSettingsSet `
     -AllowStartIfOnBatteries `

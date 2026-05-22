@@ -203,13 +203,25 @@ def callback_audio(indata, frames, time_info, status):
         donnees_audio.append(indata.copy())
 
 
-flux = sd.InputStream(
-    samplerate=TAUX_ECHANTILLON,
-    channels=1,
-    dtype="float32",
-    callback=callback_audio,
-)
-flux.start()
+# Retry au démarrage : attend que le driver MME soit prêt (jusqu'à 60s)
+flux = None
+for _tentative in range(12):
+    try:
+        flux = sd.InputStream(
+            samplerate=TAUX_ECHANTILLON,
+            channels=1,
+            dtype="float32",
+            callback=callback_audio,
+        )
+        flux.start()
+        break
+    except Exception as _e:
+        print(f"  Micro indisponible, nouvel essai dans 5s... ({_e})")
+        time.sleep(5)
+
+if flux is None:
+    print("Erreur : impossible d'ouvrir le micro après 60s. Vérifiez le micro par défaut Windows.")
+    sys.exit(1)
 
 
 def debut_enregistrement(event):
