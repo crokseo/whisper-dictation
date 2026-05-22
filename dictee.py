@@ -42,16 +42,22 @@ print(f"  Modele '{MODELE}' charge.")
 print(f"  Icone systray active - clic droit pour quitter.\n")
 
 en_enregistrement = False
+en_pause          = False
 donnees_audio     = []
 tray_icon         = None
 historique        = []  # dernières phrases dictées
 
 
-def creer_icone(enregistrement=False):
-    """Cree une icone ronde : rouge si enregistrement, verte sinon."""
+def creer_icone(enregistrement=False, pause=False):
+    """Cree une icone ronde : rouge=enregistrement, grise=pause, verte=prêt."""
     img  = Image.new("RGBA", (64, 64), (0, 0, 0, 0))
     draw = ImageDraw.Draw(img)
-    couleur = (220, 50, 50) if enregistrement else (50, 200, 80)
+    if enregistrement:
+        couleur = (220, 50, 50)
+    elif pause:
+        couleur = (130, 130, 130)
+    else:
+        couleur = (50, 200, 80)
     draw.ellipse([4, 4, 60, 60], fill=couleur)
     draw.ellipse([20, 20, 44, 44], fill=(255, 255, 255, 180))
     return img
@@ -227,9 +233,21 @@ nom_micro = sd.query_devices(kind="input")["name"]
 print(f"  Micro utilisé : {nom_micro}")
 
 
+def basculer_pause(icon=None, item=None):
+    global en_pause
+    en_pause = not en_pause
+    if en_pause:
+        icon.icon  = creer_icone(pause=True)
+        icon.title = "⏸ Whisper Dictée — En pause"
+    else:
+        icon.icon  = creer_icone()
+        icon.title = "🟢 Whisper Dictée (F9)"
+    icon.update_menu()
+
+
 def debut_enregistrement(event):
     global en_enregistrement, donnees_audio
-    if en_enregistrement:
+    if en_pause or en_enregistrement:
         return
     en_enregistrement = True
     donnees_audio     = []
@@ -299,6 +317,11 @@ menu = pystray.Menu(
         "📋 Historique des dictées",
         ouvrir_historique,
         default=True,   # clic gauche sur l'icone
+    ),
+    pystray.Menu.SEPARATOR,
+    pystray.MenuItem(
+        lambda item: "▶ Reprendre la dictée" if en_pause else "⏸ Mettre en pause",
+        basculer_pause,
     ),
     pystray.Menu.SEPARATOR,
     pystray.MenuItem("Maintenez F9 pour dicter", None, enabled=False),
