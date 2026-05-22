@@ -223,6 +223,9 @@ if flux is None:
     print("Erreur : impossible d'ouvrir le micro après 60s. Vérifiez le micro par défaut Windows.")
     sys.exit(1)
 
+nom_micro = sd.query_devices(kind="input")["name"]
+print(f"  Micro utilisé : {nom_micro}")
+
 
 def debut_enregistrement(event):
     global en_enregistrement, donnees_audio
@@ -299,6 +302,7 @@ menu = pystray.Menu(
     ),
     pystray.Menu.SEPARATOR,
     pystray.MenuItem("Maintenez F9 pour dicter", None, enabled=False),
+    pystray.MenuItem(f"🎙 {nom_micro}", None, enabled=False),
     pystray.Menu.SEPARATOR,
     pystray.MenuItem("Quitter", quitter),
 )
