@@ -293,6 +293,16 @@ def fin_et_transcription(event):
         print("  Aucun texte detecte.")
 
 
+def redemarrer(icon, item):
+    """Relance le processus complet (utile après une mise en veille)."""
+    import subprocess
+    subprocess.Popen([sys.executable, os.path.abspath(__file__)])
+    icon.stop()
+    flux.stop()
+    flux.close()
+    sys.exit(0)
+
+
 def quitter(icon, item):
     """Arret propre depuis le menu systray."""
     icon.stop()
@@ -327,6 +337,7 @@ menu = pystray.Menu(
     pystray.MenuItem("Maintenez F9 pour dicter", None, enabled=False),
     pystray.MenuItem(f"🎙 {nom_micro}", None, enabled=False),
     pystray.Menu.SEPARATOR,
+    pystray.MenuItem("🔄 Forcer le redémarrage", redemarrer),
     pystray.MenuItem("Quitter", quitter),
 )
 
