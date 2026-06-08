@@ -13,12 +13,36 @@ import time
 import threading
 import tkinter as tk
 import numpy as np
+import atexit
 
 # Compatibilité pythonw (pas de console)
 if sys.stdout is None:
     sys.stdout = open(os.devnull, "w")
 if sys.stderr is None:
     sys.stderr = open(os.devnull, "w")
+
+# Verrou instance unique : empêche plusieurs instances simultanées
+_LOCK_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "dictee.lock")
+
+def _verifier_instance_unique():
+    if os.path.exists(_LOCK_FILE):
+        try:
+            with open(_LOCK_FILE) as f:
+                pid = int(f.read().strip())
+            # Vérifie si le PID est encore actif
+            import ctypes
+            handle = ctypes.windll.kernel32.OpenProcess(0x100000, False, pid)
+            if handle:
+                ctypes.windll.kernel32.CloseHandle(handle)
+                print(f"Une instance tourne déjà (PID {pid}). Arrêt.")
+                sys.exit(0)
+        except Exception:
+            pass  # PID invalide ou processus mort — on continue
+    with open(_LOCK_FILE, "w") as f:
+        f.write(str(os.getpid()))
+    atexit.register(lambda: os.path.exists(_LOCK_FILE) and os.remove(_LOCK_FILE))
+
+_verifier_instance_unique()
 import sounddevice as sd
 import keyboard
 import pyperclip
