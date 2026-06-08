@@ -28,12 +28,17 @@ from PIL import Image, ImageDraw
 import pystray
 
 # --- Configuration (modifiable) ---
-MODELE           = "base"   # tiny | base | small | medium | large-v3
+MODELE           = "small"  # tiny | base | small | medium | large-v3
 LANGUE           = "fr"     # fr | en | auto | ...
 TOUCHE           = "F9"     # Touche a maintenir pour dicter
 TAUX_ECHANTILLON = 16000
 DUREE_MIN_SEC    = 0.5
 MAX_HISTORIQUE   = 10
+PROMPT_INITIAL   = (
+    "Google Ads, ROAS, CPA, CTR, PMax, Quality Score, campagne, enchères, "
+    "conversion, remarketing, audience, budget, CPC, impression, clics, "
+    "annonce, mots-clés, négatifs, extensions, ciblage, reporting, dashboard"
+)
 # ----------------------------------
 
 print("Chargement du modele Whisper, patientez...")
@@ -280,8 +285,21 @@ def fin_et_transcription(event):
     niveau = float(np.abs(audio).mean())
     print(f"  Transcription... ({duree:.1f}s, niveau={niveau:.4f})")
 
-    segments, _ = modele.transcribe(audio, language=LANGUE, beam_size=5)
+    segments, _ = modele.transcribe(
+        audio,
+        language=LANGUE,
+        beam_size=5,
+        temperature=0,
+        vad_filter=True,
+        initial_prompt=PROMPT_INITIAL,
+    )
     texte = " ".join(seg.text for seg in segments).strip()
+
+    # Post-traitement : majuscule initiale + point final si absent
+    if texte:
+        texte = texte[0].upper() + texte[1:]
+        if texte[-1] not in ".!?…":
+            texte += "."
 
     if texte:
         print(f"  OK : {texte}")
