@@ -339,10 +339,10 @@ def redemarrer(icon, item):
     """Relance le processus complet (utile après une mise en veille)."""
     import subprocess
     subprocess.Popen([sys.executable, os.path.abspath(__file__)])
-    icon.stop()
     flux.stop()
     flux.close()
-    sys.exit(0)
+    # Arrêt dans un thread pour éviter l'erreur SystemExit dans le callback pystray
+    threading.Thread(target=icon.stop, daemon=True).start()
 
 
 def quitter(icon, item):
