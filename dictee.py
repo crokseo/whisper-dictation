@@ -105,16 +105,15 @@ def ouvrir_historique(icon=None, item=None):
         root = tk.Tk()
         root.title("Historique des dictées")
         root.configure(bg="#1e1e1e")
-        root.resizable(False, False)
+        root.resizable(True, True)
         root.wm_attributes("-topmost", True)
-        # Pas d'entrée dans la barre des tâches
         root.wm_attributes("-toolwindow", True)
 
-        # Position : coin bas-droit, au-dessus de la barre des tâches
-        largeur, hauteur = 480, min(80 + len(historique) * 58, 680)
+        largeur, hauteur = 560, min(100 + len(historique) * 72, 700)
         x = root.winfo_screenwidth() - largeur - 20
         y = root.winfo_screenheight() - hauteur - 60
         root.geometry(f"{largeur}x{hauteur}+{x}+{y}")
+        root.minsize(400, 200)
 
         # En-tête
         en_tete = tk.Frame(root, bg="#2d2d2d", pady=10)
@@ -135,80 +134,7 @@ def ouvrir_historique(icon=None, item=None):
             font=("Segoe UI", 9),
         ).pack(side="right", padx=10)
 
-        # Zone scrollable
-        canvas    = tk.Canvas(root, bg="#1e1e1e", highlightthickness=0)
-        scrollbar = tk.Scrollbar(root, orient="vertical", command=canvas.yview)
-        frame_interieur = tk.Frame(canvas, bg="#1e1e1e")
-
-        frame_interieur.bind(
-            "<Configure>",
-            lambda e: canvas.configure(scrollregion=canvas.bbox("all")),
-        )
-        canvas.create_window((0, 0), window=frame_interieur, anchor="nw")
-        canvas.configure(yscrollcommand=scrollbar.set)
-
-        if not historique:
-            tk.Label(
-                frame_interieur,
-                text="Aucune dictée pour l'instant.\nMaintenez F9 pour dicter.",
-                bg="#1e1e1e",
-                fg="#666666",
-                font=("Segoe UI", 10),
-                pady=30,
-            ).pack()
-        else:
-            for i, phrase in enumerate(historique):
-                ligne = tk.Frame(frame_interieur, bg="#2a2a2a", pady=8, padx=10)
-                ligne.pack(fill="x", padx=8, pady=3)
-
-                # Numéro
-                tk.Label(
-                    ligne,
-                    text=f"#{i + 1}",
-                    bg="#2a2a2a",
-                    fg="#555555",
-                    font=("Segoe UI", 8),
-                    width=3,
-                    anchor="n",
-                ).pack(side="left", padx=(0, 6), anchor="n")
-
-                # Texte (avec retour à la ligne automatique)
-                tk.Label(
-                    ligne,
-                    text=phrase,
-                    bg="#2a2a2a",
-                    fg="#e0e0e0",
-                    font=("Segoe UI", 9),
-                    anchor="w",
-                    justify="left",
-                    wraplength=340,
-                ).pack(side="left", fill="x", expand=True, anchor="n")
-
-                # Bouton copier
-                def _copier(p=phrase, r=root):
-                    pyperclip.copy(p)
-                    r.destroy()
-
-                btn = tk.Button(
-                    ligne,
-                    text="📋",
-                    command=_copier,
-                    bg="#3a3a3a",
-                    fg="white",
-                    activebackground="#505050",
-                    relief="flat",
-                    font=("Segoe UI", 11),
-                    cursor="hand2",
-                    padx=6,
-                    pady=2,
-                )
-                btn.pack(side="right", anchor="n")
-
-        canvas.pack(side="left", fill="both", expand=True)
-        if historique:
-            scrollbar.pack(side="right", fill="y")
-
-        # Pied : bouton Fermer
+        # Pied : bouton Fermer (packé avant le canvas pour rester fixe en bas)
         pied = tk.Frame(root, bg="#2d2d2d", pady=8)
         pied.pack(fill="x", side="bottom")
         tk.Button(
@@ -225,9 +151,98 @@ def ouvrir_historique(icon=None, item=None):
             cursor="hand2",
         ).pack()
 
+        # Zone scrollable
+        conteneur = tk.Frame(root, bg="#1e1e1e")
+        conteneur.pack(fill="both", expand=True)
+
+        canvas    = tk.Canvas(conteneur, bg="#1e1e1e", highlightthickness=0)
+        scrollbar = tk.Scrollbar(conteneur, orient="vertical", command=canvas.yview)
+        scrollbar.pack(side="right", fill="y")
+        canvas.pack(side="left", fill="both", expand=True)
+
+        frame_interieur = tk.Frame(canvas, bg="#1e1e1e")
+        fenetre_canvas = canvas.create_window((0, 0), window=frame_interieur, anchor="nw")
+
+        def _on_resize(event):
+            canvas.itemconfig(fenetre_canvas, width=event.width)
+        canvas.bind("<Configure>", _on_resize)
+
+        frame_interieur.bind(
+            "<Configure>",
+            lambda e: canvas.configure(scrollregion=canvas.bbox("all")),
+        )
+        canvas.configure(yscrollcommand=scrollbar.set)
+
+        # Scroll à la molette
+        def _scroll(event):
+            canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
+        canvas.bind_all("<MouseWheel>", _scroll)
+
+        if not historique:
+            tk.Label(
+                frame_interieur,
+                text="Aucune dictée pour l'instant.\nMaintenez F9 pour dicter.",
+                bg="#1e1e1e",
+                fg="#666666",
+                font=("Segoe UI", 10),
+                pady=30,
+            ).pack()
+        else:
+            for i, phrase in enumerate(historique):
+                # Carte : grid avec 3 colonnes [numéro | texte | bouton]
+                carte = tk.Frame(frame_interieur, bg="#2a2a2a")
+                carte.pack(fill="x", padx=8, pady=4)
+                carte.columnconfigure(1, weight=1)  # colonne texte s'étire
+
+                # Numéro
+                tk.Label(
+                    carte,
+                    text=f"#{i + 1}",
+                    bg="#2a2a2a",
+                    fg="#555555",
+                    font=("Segoe UI", 8),
+                    width=3,
+                    anchor="nw",
+                ).grid(row=0, column=0, sticky="nw", padx=(10, 4), pady=10)
+
+                # Texte
+                lbl_texte = tk.Label(
+                    carte,
+                    text=phrase,
+                    bg="#2a2a2a",
+                    fg="#e0e0e0",
+                    font=("Segoe UI", 10),
+                    anchor="nw",
+                    justify="left",
+                    wraplength=370,
+                )
+                lbl_texte.grid(row=0, column=1, sticky="nw", pady=10)
+
+                # Bouton copier — feedback visuel "Copié !"
+                def _copier(p=phrase, b=None):
+                    pyperclip.copy(p)
+                    if b:
+                        b.config(text="✓ Copié", fg="#5cb85c")
+                        b.after(1200, lambda: b.config(text="📋 Copier", fg="#cccccc"))
+
+                btn = tk.Button(
+                    carte,
+                    text="📋 Copier",
+                    bg="#3a3a3a",
+                    fg="#cccccc",
+                    activebackground="#505050",
+                    activeforeground="white",
+                    relief="flat",
+                    font=("Segoe UI", 9),
+                    cursor="hand2",
+                    padx=10,
+                    pady=6,
+                )
+                btn.config(command=lambda p=phrase, b=btn: _copier(p, b))
+                btn.grid(row=0, column=2, sticky="ne", padx=10, pady=10)
+
         # Fermer avec Échap
         root.bind("<Escape>", lambda e: root.destroy())
-
         root.mainloop()
 
     threading.Thread(target=_construire_fenetre, daemon=True).start()
