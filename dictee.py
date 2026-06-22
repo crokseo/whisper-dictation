@@ -66,7 +66,12 @@ PROMPT_INITIAL   = (
 # ----------------------------------
 
 print("Chargement du modele Whisper, patientez...")
-modele = WhisperModel(MODELE, device="cuda", compute_type="float16")
+try:
+    modele = WhisperModel(MODELE, device="cuda", compute_type="float16")
+    print("  GPU CUDA activé.")
+except Exception as _e:
+    print(f"  GPU indisponible ({_e.__class__.__name__}), bascule sur CPU.")
+    modele = WhisperModel(MODELE, device="cpu", compute_type="int8")
 print(f"  Modele '{MODELE}' charge.")
 print(f"  Icone systray active - clic droit pour quitter.\n")
 
