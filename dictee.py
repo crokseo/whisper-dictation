@@ -52,7 +52,7 @@ from PIL import Image, ImageDraw
 import pystray
 
 # --- Configuration (modifiable) ---
-MODELE           = "small"  # tiny | base | small | medium | large-v3
+MODELE           = "large-v3-turbo"  # tiny | base | small | medium | large-v3 | large-v3-turbo
 LANGUE           = "fr"     # fr | en | auto | ...
 TOUCHE           = "F9"     # Touche a maintenir pour dicter
 TAUX_ECHANTILLON = 16000
