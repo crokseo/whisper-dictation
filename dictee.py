@@ -68,6 +68,9 @@ PROMPT_INITIAL   = (
 print("Chargement du modele Whisper, patientez...")
 try:
     modele = WhisperModel(MODELE, device="cuda", compute_type="float16")
+    # Validation GPU : inférence sur audio silencieux pour forcer le chargement cuBLAS
+    _test = np.zeros(TAUX_ECHANTILLON, dtype="float32")
+    list(modele.transcribe(_test, language=LANGUE)[0])
     print("  GPU CUDA activé.")
 except Exception as _e:
     print(f"  GPU indisponible ({_e.__class__.__name__}), bascule sur CPU.")
