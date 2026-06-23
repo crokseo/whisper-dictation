@@ -335,7 +335,7 @@ def fin_et_transcription(event):
     segments, _ = modele.transcribe(
         audio,
         language=LANGUE,
-        beam_size=5,
+        beam_size=1,
         temperature=0,
         vad_filter=True,
         initial_prompt=PROMPT_INITIAL,
