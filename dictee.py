@@ -88,14 +88,16 @@ tray_icon         = None
 historique        = []  # dernières phrases dictées
 
 
-def creer_icone(enregistrement=False, pause=False):
-    """Cree une icone ronde : rouge=enregistrement, grise=pause, verte=prêt."""
+def creer_icone(enregistrement=False, pause=False, alerte=False):
+    """Cree une icone ronde : rouge=enregistrement, grise=pause, orange=alerte, verte=prêt."""
     img  = Image.new("RGBA", (64, 64), (0, 0, 0, 0))
     draw = ImageDraw.Draw(img)
     if enregistrement:
         couleur = (220, 50, 50)
     elif pause:
         couleur = (130, 130, 130)
+    elif alerte:
+        couleur = (230, 130, 30)
     else:
         couleur = (50, 200, 80)
     draw.ellipse([4, 4, 60, 60], fill=couleur)
@@ -288,6 +290,16 @@ nom_micro = sd.query_devices(kind="input")["name"]
 print(f"  Micro utilisé : {nom_micro}")
 
 
+def surveiller_flux():
+    """Vérifie toutes les 5s que le flux audio est actif, passe en orange sinon."""
+    while True:
+        time.sleep(5)
+        if tray_icon and not en_enregistrement and not en_pause:
+            actif = flux is not None and flux.active
+            tray_icon.icon = creer_icone(alerte=not actif)
+            tray_icon.title = "🟢 Whisper Dictée (F9)" if actif else "🟠 Whisper — Micro indisponible"
+
+
 def basculer_pause(icon=None, item=None):
     global en_pause
     en_pause = not en_pause
@@ -388,6 +400,9 @@ def lancer_clavier():
 # Thread clavier en arriere-plan
 t = threading.Thread(target=lancer_clavier, daemon=True)
 t.start()
+
+# Thread surveillance flux audio (icône orange si micro indisponible)
+threading.Thread(target=surveiller_flux, daemon=True).start()
 
 # Icone systray dans le thread principal
 menu = pystray.Menu(
