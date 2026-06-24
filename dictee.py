@@ -15,6 +15,17 @@ import tkinter as tk
 import numpy as np
 import atexit
 
+# Ajout des DLLs CUDA 12 installées via pip au PATH Windows
+_cuda_bins = [
+    os.path.join(sys.prefix, "Lib", "site-packages", "nvidia", "cublas", "bin"),
+    os.path.join(sys.prefix, "Lib", "site-packages", "nvidia", "cuda_runtime", "bin"),
+    os.path.join(sys.prefix, "Lib", "site-packages", "nvidia", "cuda_nvrtc", "bin"),
+]
+for _p in _cuda_bins:
+    if os.path.isdir(_p) and _p not in os.environ.get("PATH", ""):
+        os.environ["PATH"] = _p + os.pathsep + os.environ.get("PATH", "")
+        os.add_dll_directory(_p)
+
 # Compatibilité pythonw (pas de console)
 if sys.stdout is None:
     sys.stdout = open(os.devnull, "w")
